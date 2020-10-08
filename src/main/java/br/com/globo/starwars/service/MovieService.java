@@ -1,5 +1,6 @@
 package br.com.globo.starwars.service;
 
+import br.com.globo.starwars.exception.ApiRequestException;
 import br.com.globo.starwars.model.Movie;
 import br.com.globo.starwars.model.MovieWrapper;
 import br.com.globo.starwars.model.People;
@@ -7,6 +8,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -27,7 +29,13 @@ public class MovieService {
 
     @Cacheable(cacheNames = "movies")
     public List<Movie> getAllMovies() {
-        List<Movie> movies = restTemplate.getForObject(URL_MOVIES, MovieWrapper.class).getMovies();
+        ResponseEntity<MovieWrapper> response = restTemplate.exchange(URL_MOVIES, HttpMethod.GET, null, MovieWrapper.class);
+
+        if (!HttpStatus.OK.equals(response.getStatusCode())) {
+            throw new ApiRequestException("Erro ao recuperar a lista de filmes");
+        }
+
+        List<Movie> movies = response.getBody().getMovies();
 
         for (Movie movie : movies) {
             movie.setCast(createListCharactersForMovie(movie));
@@ -38,7 +46,16 @@ public class MovieService {
 
     @Cacheable(cacheNames = "movie", key = "#id")
     public Movie getMovieById(Long id) throws JsonProcessingException {
-        Movie movie = restTemplate.getForObject(MessageFormat.format(URL_MOVIE_BY_ID, id), Movie.class);
+        ResponseEntity<Movie> response = restTemplate.exchange(MessageFormat.format(URL_MOVIE_BY_ID, id), HttpMethod.GET, null, Movie.class);
+
+        if (HttpStatus.NOT_FOUND.equals(response.getStatusCode())) {
+            throw new ApiRequestException("Não foi encontrado filme com o id " + id);
+        } else if (!HttpStatus.OK.equals(response.getStatusCode())) {
+            throw new ApiRequestException("Erro ao recuperar o filme com o id informado");
+        }
+
+        Movie movie = response.getBody();
+
         movie.setId(id);
         movie.setCast(createListCharactersForMovie(movie));
 
@@ -52,6 +69,10 @@ public class MovieService {
             for (String people : movie.getCharacters()) {
                 String url = people.replaceAll("http", "https");
                 ResponseEntity<People> response = restTemplate.exchange(url, HttpMethod.GET, null, People.class);
+
+                if (!HttpStatus.OK.equals(response.getStatusCode())) {
+                    throw new ApiRequestException("Erro ao pesquisar o 'character' da URL " + url);
+                }
 
                 if (response.getBody() != null) {
                     cast.add(response.getBody().getName());
