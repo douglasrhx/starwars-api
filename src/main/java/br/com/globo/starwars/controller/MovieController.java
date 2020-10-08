@@ -1,7 +1,7 @@
 package br.com.globo.starwars.controller;
 
 import br.com.globo.starwars.model.Movie;
-import br.com.globo.starwars.service.StarWarsService;
+import br.com.globo.starwars.service.MovieService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,16 +13,16 @@ import java.util.List;
 
 @RestController
 @RequestMapping("starwars")
-public class StarWarsController {
+public class MovieController {
 
     @Autowired
-    private StarWarsService starWarsService;
+    private MovieService movieService;
 
     @GetMapping("movies/{id}")
     public Movie getMovieById(@PathVariable("id") Long id) throws JsonProcessingException {
-        return starWarsService.getMovieById(id);
+        return movieService.getMovieById(id);
     }
 
     @GetMapping("movies")
-    public List<Movie> getAllMovies() { return starWarsService.getAllMovies(); }
+    public List<Movie> getAllMovies() { return movieService.getAllMovies(); }
 }
