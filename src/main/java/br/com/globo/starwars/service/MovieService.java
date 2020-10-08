@@ -4,7 +4,6 @@ import br.com.globo.starwars.exception.ApiRequestException;
 import br.com.globo.starwars.model.Movie;
 import br.com.globo.starwars.model.MovieWrapper;
 import br.com.globo.starwars.model.People;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpMethod;
@@ -45,33 +44,32 @@ public class MovieService {
     }
 
     @Cacheable(cacheNames = "movie", key = "#id")
-    public Movie getMovieById(Long id) throws JsonProcessingException {
+    public Movie getMovieById(Long id) {
         ResponseEntity<Movie> response = restTemplate.exchange(MessageFormat.format(URL_MOVIE_BY_ID, id), HttpMethod.GET, null, Movie.class);
 
         if (HttpStatus.NOT_FOUND.equals(response.getStatusCode())) {
-            throw new ApiRequestException("Não foi encontrado filme com o id " + id);
+            throw new ApiRequestException("Nao foi encontrado filme com o id " + id);
         } else if (!HttpStatus.OK.equals(response.getStatusCode())) {
             throw new ApiRequestException("Erro ao recuperar o filme com o id informado");
         }
 
         Movie movie = response.getBody();
-
         movie.setId(id);
         movie.setCast(createListCharactersForMovie(movie));
 
         return movie;
     }
 
-    private List<String> createListCharactersForMovie(Movie movie) {
+    public List<String> createListCharactersForMovie(Movie movie) {
         List<String> cast = new ArrayList<>();
 
         if (movie.getCharacters() != null && !movie.getCharacters().isEmpty()) {
-            for (String people : movie.getCharacters()) {
-                String url = people.replaceAll("http", "https");
+            for (String characterUrl : movie.getCharacters()) {
+                String url = characterUrl.replaceAll("http", "https");
                 ResponseEntity<People> response = restTemplate.exchange(url, HttpMethod.GET, null, People.class);
 
                 if (!HttpStatus.OK.equals(response.getStatusCode())) {
-                    throw new ApiRequestException("Erro ao pesquisar o 'character' da URL " + url);
+                    throw new ApiRequestException("Erro ao pesquisar o personagem da URL " + characterUrl);
                 }
 
                 if (response.getBody() != null) {
@@ -81,5 +79,4 @@ public class MovieService {
         }
         return cast;
     }
-
 }
