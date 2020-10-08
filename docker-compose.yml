@@ -1,0 +1,19 @@
+version: '3'
+services:
+  springboot:
+    image: globo-starwars-api
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: globo-starwars-api
+    ports:
+      - "8080:8080"
+    links:
+      - "redis"
+    depends_on:
+      - "redis"
+  redis:
+    image: redis:6.0.8
+    container_name: globo-redis
+    expose:
+      - 6379
