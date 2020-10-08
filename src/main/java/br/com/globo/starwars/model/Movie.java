@@ -16,7 +16,6 @@ import java.util.List;
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Movie implements Serializable {
-    @JsonProperty("episode_id")
     private Long id;
 
     private String title;
@@ -31,6 +30,8 @@ public class Movie implements Serializable {
     @JsonProperty("release_date")
     private String releaseDate;
 
-    @JsonProperty("characters")
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private List<String> characters;
+
     private List<String> cast;
 }
